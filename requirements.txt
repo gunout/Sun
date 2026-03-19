@@ -9,3 +9,4 @@ xlrd
 scipy
 statsmodels
 scikit-learn
+ploty
