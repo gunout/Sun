@@ -157,8 +157,15 @@ class SolarDataAnalyzer:
         return configs.get(self.data_type, configs["default"])
     
     def generate_solar_data(self):
-        dates = pd.date_range(start=f'{self.start_year}-01-01', 
-                             end=f'{self.end_year}-12-31', freq='Y')
+        # CORRECTION: 'Y' remplacé par 'YS' (Year Start) ou 'YE' (Year End)
+        try:
+            # Pour pandas >= 2.2.0
+            dates = pd.date_range(start=f'{self.start_year}-01-01', 
+                                 end=f'{self.end_year}-12-31', freq='YS')
+        except ValueError:
+            # Pour pandas < 2.2.0
+            dates = pd.date_range(start=f'{self.start_year}-01-01', 
+                                 end=f'{self.end_year}-12-31', freq='Y')
         
         data = {'Year': [date.year for date in dates]}
         data['Base_Value'] = self._simulate_solar_cycle(dates)
@@ -644,14 +651,17 @@ def main():
             st.write("**🔄 Analyse des cycles**")
             
             # Détection des cycles
-            from scipy import signal
-            values = df['Base_Value'].values
-            peaks, _ = signal.find_peaks(values, distance=5)
-            
-            st.metric("Nombre de cycles détectés", len(peaks))
-            if len(peaks) > 1:
-                avg_cycle = np.mean(np.diff(df['Year'].iloc[peaks]))
-                st.metric("Durée moyenne du cycle", f"{avg_cycle:.1f} ans")
+            try:
+                from scipy import signal
+                values = df['Base_Value'].values
+                peaks, _ = signal.find_peaks(values, distance=5)
+                
+                st.metric("Nombre de cycles détectés", len(peaks))
+                if len(peaks) > 1:
+                    avg_cycle = np.mean(np.diff(df['Year'].iloc[peaks]))
+                    st.metric("Durée moyenne du cycle", f"{avg_cycle:.1f} ans")
+            except:
+                st.info("Bibliothèque scipy non disponible")
             
             # Corrélations
             corr_matrix = df[['Base_Value', 'Activity_Level', 'Solar_Index', 
